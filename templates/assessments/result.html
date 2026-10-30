@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Assessment Result #{{ assessment.id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <!-- Status Header -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div>
+                <span class="badge {% if assessment.status == 'COMPLETED' %}bg-success{% elif assessment.status == 'PROCESSING' %}bg-warning text-dark{% else %}bg-danger{% endif %} px-3 py-2 fs-6 rounded-pill mb-2">
+                    {{ assessment.get_status_display }}
+                </span>
+                <h1 class="h3 fw-bold mb-1">Assessment Report</h1>
+                <p class="text-muted small mb-0">Analyzed on {{ assessment.created_at|date:"F d, Y \a\t H:i" }} | Processed in {{ assessment.processing_duration|default:"1.2" }}s</p>
+            </div>
+            <div class="d-flex gap-2 mt-3 mt-md-0">
+                <a href="{% url 'assessment_record' %}" class="btn btn-primary d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-arrow-repeat"></i> Try Another
+                </a>
+                <a href="{% url 'assessment_history' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-clock-history"></i> History
+                </a>
+            </div>
+        </div>
+
+        {% if assessment.status == 'FAILED' %}
+        <div class="card p-4 p-md-5 bg-white border-danger shadow-sm mb-4">
+            <div class="text-center text-danger mb-3">
+                <i class="bi bi-exclamation-octagon-fill display-3"></i>
+                <h3 class="fw-bold mt-2">Assessment Could Not Be Completed</h3>
+            </div>
+            <div class="alert alert-danger mb-4">
+                <strong>Error Details:</strong> {{ assessment.error_message|default:"An error occurred during audio processing or speech recognition." }}
+            </div>
+            <div class="text-center">
+                <a href="{% url 'assessment_record' %}" class="btn btn-primary px-4">Record Again</a>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- TRANSPARENT SCOREBOARD -->
+        <div class="card p-4 bg-white shadow-sm mb-4">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-speedometer2 text-primary"></i> Assessment Scoreboard
+            </h5>
+            <div class="row g-3 text-center">
+                <!-- Grammar Score -->
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3 bg-light h-100">
+                        <div class="score-circle {% if assessment.grammar_score >= 80 %}score-good{% elif assessment.grammar_score >= 50 %}score-medium{% else %}score-low{% endif %} mb-2">
+                            {{ assessment.grammar_score|floatformat:0 }}%
+                        </div>
+                        <h6 class="fw-bold mb-1">Grammar</h6>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">Text syntax & grammar</small>
+                    </div>
+                </div>
+
+                <!-- Pronunciation Score (Disclaimed if unconfigured) -->
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3 bg-light h-100 position-relative">
+                        <div class="score-circle {% if assessment.pronunciation_score is not None %}score-good{% else %}score-na{% endif %} mb-2">
+                            {% if assessment.pronunciation_score is not None %}
+                                {{ assessment.pronunciation_score|floatformat:0 }}%
+                            {% else %}
+                                <span class="fs-6 fw-bold">N/A</span>
+                            {% endif %}
+                        </div>
+                        <h6 class="fw-bold mb-1">Pronunciation</h6>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            {% if assessment.pronunciation_score is not None %}Acoustic score{% else %}Phoneme N/A{% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Fluency Score -->
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3 bg-light h-100">
+                        <div class="score-circle {% if assessment.fluency_score is not None %}score-good{% else %}score-na{% endif %} mb-2">
+                            {% if assessment.fluency_score is not None %}
+                                {{ assessment.fluency_score|floatformat:0 }}%
+                            {% else %}
+                                <span class="fs-6 fw-bold">N/A</span>
+                            {% endif %}
+                        </div>
+                        <h6 class="fw-bold mb-1">Fluency</h6>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            {% if assessment.fluency_score is not None %}Acoustic pauses{% else %}Speech rate N/A{% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Overall Score -->
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3 bg-primary-subtle text-primary h-100">
+                        <div class="score-circle score-good mb-2">
+                            {{ assessment.overall_score|floatformat:0 }}%
+                        </div>
+                        <h6 class="fw-bold mb-1">Overall</h6>
+                        <small class="text-primary-emphasis d-block" style="font-size: 0.75rem;">Grammar-based score</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transparency Disclaimer -->
+            {% if pronunciation_notice %}
+            <div class="alert alert-secondary small mt-3 mb-0 py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle-fill text-primary"></i>
+                <div>
+                    <strong>Scoring Transparency:</strong> {{ pronunciation_notice }} Grammar score measures linguistic structure, while speech-recognition transcript does not evaluate acoustic phoneme accuracy.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TRANSCRIPTION & CORRECTION COMPARISON -->
+        <div class="row g-4 mb-4">
+            <!-- Original Spoken Transcript -->
+            <div class="col-md-6">
+                <div class="card p-4 h-100 bg-white border-start border-4 border-warning shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-mic me-1"></i> Original Speech Transcription</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis">What was heard</span>
+                    </div>
+                    <div class="p-3 bg-light rounded-3 font-monospace fs-5 text-dark mb-3">
+                        "{{ assessment.original_transcript }}"
+                    </div>
+                    <p class="text-muted small mb-0">Captured verbatim by the Speech-to-Text engine before linguistic evaluation.</p>
+                </div>
+            </div>
+
+            <!-- Corrected Sentence -->
+            <div class="col-md-6">
+                <div class="card p-4 h-100 bg-white border-start border-4 border-success shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-check2-circle me-1"></i> Grammatically Corrected</span>
+                        <span class="badge bg-success-subtle text-success-emphasis">AI Tutor Revision</span>
+                    </div>
+                    <div class="p-3 bg-success-subtle rounded-3 font-monospace fs-5 text-success-emphasis mb-3 fw-semibold">
+                        "{{ assessment.corrected_sentence }}"
+                    </div>
+                    <p class="text-muted small mb-0">Standard English phrasing revised by the Qwen2.5 LLM assessment pipeline.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PEDAGOGICAL FEEDBACK -->
+        <div class="card p-4 bg-white shadow-sm mb-4">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-chat-left-dots text-primary"></i> Personalized Tutor Feedback
+            </h5>
+            <div class="p-3 bg-light rounded-3">
+                <div class="lh-lg text-secondary" style="white-space: pre-line;">{{ assessment.feedback }}</div>
+            </div>
+        </div>
+
+        <!-- AUDIO PLAYBACK -->
+        {% if assessment.audio_file %}
+        <div class="card p-4 bg-white shadow-sm mb-4">
+            <h5 class="fw-bold mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-headphones text-primary"></i> Your Original Audio Recording
+            </h5>
+            <p class="text-muted small mb-3">Listen to your spoken pronunciation and compare it against the target sentence.</p>
+            <audio controls class="w-100">
+                <source src="{{ assessment.audio_file.url }}" type="audio/wav">
+                <source src="{{ assessment.audio_file.url }}" type="audio/webm">
+                Your browser does not support audio playback.
+            </audio>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

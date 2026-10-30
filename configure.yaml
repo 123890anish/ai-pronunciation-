@@ -1,0 +1,42 @@
+# Pronunciation & Grammar Assessment Configuration
+app:
+  name: "Pronunciation & Grammar Assessment"
+  language: "en"
+  timezone: "Asia/Kolkata"
+
+assessment:
+  grammar_correction_enabled: true
+  feedback_enabled: true
+  # Pronunciation scoring is strictly set to false by default because
+  # pure STT does not perform phoneme-level acoustic assessment.
+  pronunciation_scoring_enabled: false
+  fluency_scoring_enabled: false
+
+audio:
+  max_upload_mb: 20
+  max_duration_seconds: 180
+  allowed_extensions:
+    - wav
+    - mp3
+    - m4a
+    - webm
+    - ogg
+  allowed_mime_types:
+    - "audio/wav"
+    - "audio/x-wav"
+    - "audio/mpeg"
+    - "audio/mp3"
+    - "audio/mp4"
+    - "audio/x-m4a"
+    - "audio/webm"
+    - "audio/ogg"
+
+llm:
+  provider: "ollama"
+  temperature: 0.2
+  timeout_seconds: 60
+
+scoring:
+  grammar_weight: 100
+  pronunciation_weight: 0
+  fluency_weight: 0

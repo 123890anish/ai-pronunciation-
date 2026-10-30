@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Record & Assess{% endblock %}
+
+{% block extra_head %}
+<style>
+    .record-btn-pulse {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .recording-card {
+        background: #ffffff;
+        border-radius: 1.25rem;
+    }
+    .visualizer-bar {
+        width: 4px;
+        height: 24px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        transition: height 0.1s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-4">
+            <h1 class="h3 fw-bold">English Speech & Grammar Assessment</h1>
+            <p class="text-muted">Speak a sentence aloud using your microphone, or upload an audio recording for AI analysis.</p>
+        </div>
+
+        <!-- Mode Toggle Tabs -->
+        <ul class="nav nav-pills nav-fill mb-4 p-1 bg-white rounded-3 shadow-sm border" id="assessmentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="mic-tab" data-bs-toggle="tab" data-bs-target="#micTabPane" type="button" role="tab">
+                    <i class="bi bi-mic me-2"></i> Record via Microphone
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="upload-tab" data-bs-toggle="tab" data-bs-target="#uploadTabPane" type="button" role="tab">
+                    <i class="bi bi-cloud-arrow-up me-2"></i> Upload Audio File
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="assessmentTabContent">
+            <!-- TAB 1: LIVE MICROPHONE RECORDING -->
+            <div class="tab-pane fade show active" id="micTabPane" role="tabpanel">
+                <div class="card recording-card p-4 p-md-5 text-center shadow-sm">
+                    <div id="micPromptArea">
+                        <div class="mb-4">
+                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-medium">
+                                <i class="bi bi-lightbulb me-1"></i> Tip: Speak clearly for 5 to 30 seconds
+                            </span>
+                        </div>
+
+                        <!-- Big Recording Icon Button -->
+                        <div class="mb-4">
+                            <button id="recordToggleBtn" type="button" class="btn btn-outline-danger p-4 rounded-circle shadow-sm" style="width: 110px; height: 110px;">
+                                <i id="recordIcon" class="bi bi-mic-fill display-5"></i>
+                            </button>
+                        </div>
+
+                        <!-- Timer & Status Display -->
+                        <div class="mb-3">
+                            <h3 id="timerDisplay" class="font-monospace fw-bold mb-1">00:00</h3>
+                            <div id="recordingStatus" class="text-muted small">Click the microphone to start speaking</div>
+                        </div>
+
+                        <!-- Audio Preview Section (Hidden initially) -->
+                        <div id="audioPreviewSection" class="d-none mt-4 p-3 bg-light rounded-3 text-start">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-semibold small"><i class="bi bi-headphones me-1"></i> Preview Recording:</span>
+                                <button type="button" id="discardBtn" class="btn btn-sm btn-link text-danger text-decoration-none p-0">
+                                    <i class="bi bi-trash"></i> Discard & Re-record
+                                </button>
+                            </div>
+                            <audio id="audioPlayback" controls class="w-100"></audio>
+                        </div>
+
+                        <!-- Submit Form for Recorded Blob -->
+                        <form id="recordedAudioForm" method="post" action="{% url 'assessment_record' %}" enctype="multipart/form-data" class="mt-4">
+                            {% csrf_token %}
+                            <input type="file" id="recordedBlobInput" name="audio_file" class="d-none">
+                            <button type="button" id="submitRecordingBtn" class="btn btn-primary btn-lg w-100 py-3 d-none">
+                                <i class="bi bi-magic me-2"></i> Submit Recording for Assessment
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Permission Denied Warning (Hidden by default) -->
+                    <div id="micPermissionDenied" class="alert alert-warning text-start d-none mt-3">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>
+                                <strong>Microphone Permission Blocked</strong>
+                                <p class="mb-0 small">Please enable microphone access in your browser settings to record speech directly, or switch to the <em>Upload Audio File</em> tab above.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: AUDIO FILE UPLOAD -->
+            <div class="tab-pane fade" id="uploadTabPane" role="tabpanel">
+                <div class="card recording-card p-4 p-md-5 shadow-sm">
+                    <form id="uploadAudioForm" method="post" action="{% url 'assessment_record' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-4 text-center">
+                            <div class="p-3 d-inline-block rounded-circle bg-primary-subtle text-primary mb-3">
+                                <i class="bi bi-file-earmark-music fs-1"></i>
+                            </div>
+                            <h4 class="fw-bold">Select Audio File</h4>
+                            <p class="text-muted small">Supported formats: WAV, MP3, M4A, WebM, OGG (Max {{ config.audio.max_upload_mb }}MB)</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_audio_file" class="form-label fw-semibold">Choose Audio Recording</label>
+                            {{ form.audio_file }}
+                            {% if form.audio_file.errors %}
+                                <div class="text-danger small mt-1">{{ form.audio_file.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" id="submitUploadBtn" class="btn btn-primary btn-lg w-100 py-3">
+                            <i class="bi bi-upload me-2"></i> Upload & Begin Assessment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay (Shown during processing to prevent duplicates) -->
+        <div id="processingIndicator" class="card mt-4 p-4 text-center d-none border-primary bg-white shadow">
+            <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+            <h5 class="fw-bold text-primary mb-1">Analyzing Your Speech...</h5>
+            <p class="text-muted small mb-0">Running speech recognition and Qwen2.5 LLM grammar assessment. Please wait.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/recorder.js"></script>
+{% endblock %}

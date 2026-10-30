@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card p-4 p-md-5 shadow-sm">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-3">
+                    <i class="bi bi-person-lock fs-1"></i>
+                </div>
+                <h2 class="fw-bold">Welcome Back</h2>
+                <p class="text-muted">Sign in to access your assessment dashboard and audio recordings.</p>
+            </div>
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label fw-semibold">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_password" class="form-label fw-semibold">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fs-5">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <span class="text-muted">Don't have an account yet?</span>
+                <a href="{% url 'register' %}" class="fw-semibold text-primary ms-1">Create an account</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

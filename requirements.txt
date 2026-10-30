@@ -1,0 +1,31 @@
+# Django Framework
+django>=5.0,<5.2
+
+# Configuration & Environment
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# HTTP Client for Ollama & REST APIs
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Speech to Text (Whisper implementation)
+# Optional: openai-whisper requires torch & ffmpeg
+openai-whisper>=20231117
+
+# Audio Processing & Validation
+pydub>=0.25.1
+soundfile>=0.12.1
+
+# Optional T5 Grammar Correction (Transformers / PyTorch)
+# Uncomment if using GRAMMAR_CORRECTION_PROVIDER=t5
+# torch>=2.2.0
+# transformers>=4.38.0
+# sentencepiece>=0.2.0
+
+# Database adapters
+# psycopg2-binary>=2.9.9  # Uncomment if using PostgreSQL
+
+# Testing & Utilities
+pytest>=8.0.0
+pytest-django>=4.8.0
